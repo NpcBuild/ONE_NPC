@@ -19,7 +19,16 @@ jobs:
           flutter-version: '3.16.9'
       - run: flutter pub get
       - run: flutter build ios --release --no-codesign
+      - name: Install xcodebuild tools
+        run: sudo xcode-select --install
+      - name: Generate .ipa file
+        run: |
+         cd ios
+         xcodebuild -workspace Runner.xcworkspace -scheme Runner -sdk iphoneos -configuration Release archive -archivePath $PWD/build/Runner.xcarchive
+         xcodebuild -exportArchive -archivePath $PWD/build/Runner.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath $PWD/build
+        env:
+          FLUTTER_ROOT: ${{ secrets.FLUTTER_ROOT }}
       - uses: actions/upload-artifact@v2
         with:
           name: iOS App
-          path: build/ios/iphoneos/*.ipa
+          path: ios/build/*.ipa
