@@ -12,16 +12,21 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install Apple Certificate
-        uses: apple-actions/import-codesign-certs@v1
-        with:
-          p12-file-base64: ${{ secrets.CERTIFICATE_P12 }}
-          p12-password: ${{ secrets.CERTIFICATE_PASSWORD }}
+      - name: Decode and Install Apple Certificate
+        run: |
+          echo "${{ secrets.CERTIFICATE_P12 }}" | base64 --decode > /tmp/certificate.p12
+          security create-keychain -p "" build.keychain
+          security import /tmp/certificate.p12 -k build.keychain -P ${{ secrets.CERTIFICATE_PASSWORD }} -T /usr/bin/codesign
+          security list-keychains -s build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "" build.keychain
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
 
-      - name: Install Provisioning Profile
-        uses: apple-actions/import-provisioning-profile@v1
-        with:
-          profile-base64: ${{ secrets.MOBILEPROVISION }}
+      - name: Decode and Install Provisioning Profile
+        run: |
+          echo "${{ secrets.MOBILEPROVISION }}" | base64 --decode > /tmp/profile.mobileprovision
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp /tmp/profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
 
       - name: Build and Archive
         run: |
