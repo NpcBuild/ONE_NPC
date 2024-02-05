@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>method</key>
+    <string>development</string>
+    <key>teamID</key>
+    <string>npctovc@gmail.com</string>
+    <key>signingCertificate</key>
+    <string>iPhone Developer</string>
+    <!-- 指定用于开发的配置文件 -->
+    <key>provisioningProfiles</key>
+    <dict>
+        <key>com.example.npc</key>
+        <string>npc</string>
+    </dict>
+    <!-- 如果需要，还可以指定更多配置 -->
+</dict>
+</plist>

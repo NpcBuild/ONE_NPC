@@ -1,32 +1,38 @@
-name: Build and Deploy iOS App
+name: Build and Sign iOS App
 
 on:
   push:
     branches:
       - main
-      - master
 
 jobs:
-  build-ios:
+  build:
     runs-on: macos-latest
+
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-java@v1
+
+      - name: Install Apple Certificate
+        uses: apple-actions/import-codesign-certs@v1
         with:
-          java-version: '12.x'
-      - uses: subosito/flutter-action@v1
+          p12-file-base64: ${{ secrets.CERTIFICATE_P12 }}
+          p12-password: ${{ secrets.CERTIFICATE_PASSWORD }}
+
+      - name: Install Provisioning Profile
+        uses: apple-actions/import-provisioning-profile@v1
         with:
-          flutter-version: '3.16.9'
-      - run: flutter pub get
-      - run: flutter build ios --release --no-codesign
-      - name: Generate .ipa file
+          profile-base64: ${{ secrets.MOBILEPROVISION }}
+
+      - name: Build and Archive
         run: |
-         cd ios
-         xcodebuild -workspace Runner.xcworkspace -scheme Runner -sdk iphoneos -configuration Release archive -archivePath $PWD/build/Runner.xcarchive
-         xcodebuild -exportArchive -archivePath $PWD/build/Runner.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath $PWD/build
-        env:
-          FLUTTER_ROOT: ${{ secrets.FLUTTER_ROOT }}
-      - uses: actions/upload-artifact@v2
+          xcodebuild -workspace YourApp.xcworkspace -scheme YourAppScheme -sdk iphoneos -configuration Release archive -archivePath ./build/YourApp.xcarchive
+
+      - name: Export IPA
+        run: |
+          xcodebuild -exportArchive -archivePath ./build/YourApp.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath ./build -allowProvisioningUpdates
+
+      - name: Upload IPA to Artifact Storage
+        uses: actions/upload-artifact@v2
         with:
-          name: iOS App
-          path: ios/build/*.ipa
+          name: AppIPA
+          path: ./build/*.ipa
