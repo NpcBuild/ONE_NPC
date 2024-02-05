@@ -30,11 +30,11 @@ jobs:
 
       - name: Build and Archive
         run: |
-          xcodebuild -workspace YourApp.xcworkspace -scheme YourAppScheme -sdk iphoneos -configuration Release archive -archivePath ./build/YourApp.xcarchive
+          xcodebuild -workspace Runner.xcworkspace -scheme Runner -sdk iphoneos -configuration Release archive -archivePath ./build/Runner.xcarchive
 
       - name: Export IPA
         run: |
-          xcodebuild -exportArchive -archivePath ./build/YourApp.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath ./build -allowProvisioningUpdates
+          xcodebuild -exportArchive -archivePath ./build/Runner.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath ./build -allowProvisioningUpdates
 
       - name: Upload IPA to Artifact Storage
         uses: actions/upload-artifact@v2
