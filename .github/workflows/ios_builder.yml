@@ -12,70 +12,32 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '2.15.1'  # 设置 Flutter 版本
+      - name: Decode and Install Apple Certificate
+        run: |
+          echo "${{ secrets.CERTIFICATE_P12 }}" | base64 --decode > /tmp/certificate.p12
+          security create-keychain -p "" build.keychain
+          security import /tmp/certificate.p12 -k build.keychain -P ${{ secrets.CERTIFICATE_PASSWORD }} -T /usr/bin/codesign
+          security list-keychains -s build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "" build.keychain
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
 
-      - name: Install dependencies
-        run: flutter pub get
+      - name: Decode and Install Provisioning Profile
+        run: |
+          echo "${{ secrets.MOBILEPROVISION }}" | base64 --decode > /tmp/profile.mobileprovision
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp /tmp/profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
 
-      - name: Build iOS app
-        run: flutter build ios
+      - name: Build and Archive
+        run: |
+          xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -sdk iphoneos -configuration Release archive -archivePath ./build/Runner.xcarchive
 
-      - name: Archive iOS app
-        run: flutter build ios --release --no-codesign
+      - name: Export IPA
+        run: |
+          xcodebuild -exportArchive -archivePath ./build/Runner.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath ./build -allowProvisioningUpdates
 
-      - name: Generate IPA
-        run: flutter build ipa --export-options-plist=ios/Runner/ExportOptions.plist
-        working-directory: ios
-
-      - name: Upload IPA
+      - name: Upload IPA to Artifact Storage
         uses: actions/upload-artifact@v2
         with:
-          name: ios-app
-          path: ios/build/iphoneos/Runner.ipa
-
-# name: Build and Sign iOS App
-
-# on:
-#   push:
-#     branches:
-#       - main
-
-# jobs:
-#   build:
-#     runs-on: macos-latest
-
-#     steps:
-#       - uses: actions/checkout@v2
-
-#       - name: Decode and Install Apple Certificate
-#         run: |
-#           echo "${{ secrets.CERTIFICATE_P12 }}" | base64 --decode > /tmp/certificate.p12
-#           security create-keychain -p "" build.keychain
-#           security import /tmp/certificate.p12 -k build.keychain -P ${{ secrets.CERTIFICATE_PASSWORD }} -T /usr/bin/codesign
-#           security list-keychains -s build.keychain
-#           security default-keychain -s build.keychain
-#           security unlock-keychain -p "" build.keychain
-#           security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
-
-#       - name: Decode and Install Provisioning Profile
-#         run: |
-#           echo "${{ secrets.MOBILEPROVISION }}" | base64 --decode > /tmp/profile.mobileprovision
-#           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-#           cp /tmp/profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
-
-#       - name: Build and Archive
-#         run: |
-#           xcodebuild -workspace Runner.xcworkspace -scheme Runner -sdk iphoneos -configuration Release archive -archivePath ./build/Runner.xcarchive
-
-#       - name: Export IPA
-#         run: |
-#           xcodebuild -exportArchive -archivePath ./build/Runner.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath ./build -allowProvisioningUpdates
-
-#       - name: Upload IPA to Artifact Storage
-#         uses: actions/upload-artifact@v2
-#         with:
-#           name: AppIPA
-#           path: ./build/*.ipa
+          name: AppIPA
+          path: ./build/*.ipa
