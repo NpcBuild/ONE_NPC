@@ -25,7 +25,7 @@ jobs:
 
       - name: Build and Archive
         run: |
-          xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -sdk iphoneos -configuration Release archive -archivePath ./build/Runner.xcarchive
+          xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -sdk iphoneos -configuration Release archive -archivePath ./build/Runner.xcarchive -allowProvisioningUpdates
 
       - name: Export IPA
         run: |
